@@ -1,0 +1,19 @@
+import flixel.FlxG;
+import funkin.modding.module.Module;
+import funkin.ui.debug.DebugMenuSubState;
+import funkin.modding.base.ScriptedMusicBeatState;
+
+class AnimInjection extends Module
+{
+    public function new()
+    {
+        super('custom-debug-injection');
+    }
+
+    override function onSubStateOpenEnd(event:SubStateScriptEvent) {
+        if (Std.isOfType(event.targetState, DebugMenuSubState)) {
+            var state = event.targetState;
+            state.createItem("Nova Character Editor", ()->FlxG.switchState(new CharacterEditor()));
+        }
+    }
+}

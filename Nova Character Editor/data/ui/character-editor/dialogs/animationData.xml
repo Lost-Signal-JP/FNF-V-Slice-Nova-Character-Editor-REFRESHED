@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<dialog width="400" title="Animation Info" closable="true" draggable="false">
+	<grid width="100%">
+        <label text="Name:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="animName" placeholder="Animation Name" width="100%" verticalAlign="center" tooltip="The Animations name." />
+
+        <label text="Prefix:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="animPrefix" placeholder="Animation Prefix" width="100%" verticalAlign="center" tooltip="The Animations Prefix in XML." />
+        
+        <label text="Asset Path:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="assetPath" placeholder="Animation Asset Path" width="100%" verticalAlign="center" tooltip="If your animation is on a different sprite sheet set, \nthe Asset Path for it here." />
+
+        <label text="Indices:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="animIndices" placeholder="Animations Indices" width="100%" verticalAlign="center" tooltip="Animation Indices." restrictChars="0-9, " />
+
+        <label text="Offsets:" style="padding: 2px;" verticalAlign="center" />
+        <hbox width="100%">
+            <number-stepper id="animOffsetX" step="1" width="100%" verticalAlign="center" tooltip="The Animations X Offset."/>
+            <number-stepper id="animOffsetY" step="1" width="100%" verticalAlign="center" tooltip="The Animations Y Offset."/>
+        </hbox>
+        
+        <label text="Frame Rate:" style="padding: 2px;" verticalAlign="center" />
+        <number-stepper id="animFrameRate" step="1" width="100%" verticalAlign="center" tooltip="The Animations Frame Rate."/>
+
+        <label text="Flip X: " style="padding: 2px;" verticalAlign="center" />
+        <option-stepper id="animFlipX" width="100%" verticalAlign="center"> 
+            <data>
+                <item text="True" id="true" />
+                <item text="False" id="false" />
+            </data>
+        </option-stepper>
+
+        <label text="Is Pixel: " style="padding: 2px;" verticalAlign="center" />
+        <option-stepper id="animIsPixel" width="100%" verticalAlign="center"> 
+            <data>
+                <item text="True" id="true" />
+                <item text="False" id="false" />
+            </data>
+        </option-stepper>
+
+        <label text="Looped: " style="padding: 2px;" verticalAlign="center" />
+        <option-stepper id="animLooped" width="100%" verticalAlign="center"> 
+            <data>
+                <item text="True" id="true" />
+                <item text="False" id="false" />
+            </data>
+        </option-stepper>
+    </grid>
+</dialog>

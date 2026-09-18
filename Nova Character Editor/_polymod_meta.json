@@ -1,0 +1,28 @@
+{
+  "music": "freakyMenu",
+  "title": "Nova Character Editor",
+  "description": "An actually good character editor.",
+  "contributors": [
+	  {
+      "name": "Nebula S. Nova",
+      "icon": "nebula",
+      "color": "#9500ff",
+      "roles": "Main Coder",
+      "url": "https://www.youtube.com/@ChinosModded"
+    },
+	  {
+        "name": "GENZU",
+        "icon": "genzu",
+        "color": "#ff9ecf",
+        "roles": "Coded The UI",
+        "url": "https://www.youtube.com/@_genzu"
+    },
+	  {
+        "name": "ADA_Funni",
+        "roles": "Helped bug fix."
+    }
+  ],
+  "api_version": "0.8.0",
+  "mod_version": "4.0.0",
+  "license": "Apache 2.0"
+}

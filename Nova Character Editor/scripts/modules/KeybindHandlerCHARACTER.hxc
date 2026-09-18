@@ -1,0 +1,56 @@
+import funkin.modding.module.Module;
+import flixel.FlxG;
+import Reflect;
+
+class KeybindHandlerCHARACTER extends Module {
+    public static var CANCEL_INPUT:Bool = false;
+    public var keybinds = [];
+
+    public function new() {
+        super('KeybindHandlerCHARACTER');
+    }
+
+    private static var keybinds = [];
+
+    public static function addKeybind(keys:Array<String>, action:Void->Void, ?type:String) {
+        keybinds.push(KeybindHandlerCHARACTER.createKeybind(keys, action, type));
+    }
+
+    public function onStateChangeBegin(e) {
+        super.onStateChangeBegin(e);
+        keybinds = [];
+    }
+
+    public function onUpdate(e) {
+        super.onUpdate(e);
+        for (keybind in KeybindHandlerCHARACTER.keybinds) {
+            var pressed = true;
+            var index = 0;
+            if (!keybind.condition()) continue;
+            //trace(keybind);
+            for (key in keybind.keys) {
+                if (index == keybind.keys.length - 1) {
+                    if (!Reflect.getProperty(FlxG.keys.justPressed, key)) {
+                        pressed = false;
+                    }
+                } else {
+                    if (!Reflect.getProperty(FlxG.keys.pressed, key)) {
+                        pressed = false;
+                    }
+                }
+                index++;
+            }
+            if (pressed && !KeybindHandlerCHARACTER.CANCEL_INPUT) {
+                keybind.action(e.elapsed);
+            }
+        }
+    }
+
+    public static function createKeybind(keys:Array<String>, action:Void->Void, ?condition = ()->{ return true; }) {
+        return {
+            keys: keys,
+            condition: condition ?? ()->{ return true; },
+            action: action
+        }
+    }
+}

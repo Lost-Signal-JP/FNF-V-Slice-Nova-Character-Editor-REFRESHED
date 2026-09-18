@@ -1,0 +1,81 @@
+<window title="Character Data" width="352" height="600" draggable="false" maximizable="false" minimizable="false" collapsable="false" closable="false">
+    <grid width="100%">
+        <label text="Character Name:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="charNameField" placeholder="Boyfriend " width="100%" verticalAlign="center" />
+
+        <label text="Asset Path:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="charAssetPath" placeholder="bf " width="100%" verticalAlign="center" />
+
+        <label text="Starting Aniamtion:" style="padding: 2px;" verticalAlign="center" />
+        <textfield id="charStartAnim" placeholder="idle " width="100%" verticalAlign="center" />
+
+        <label text="Render Type: " style="padding: 2px;" verticalAlign="center" />
+        <option-stepper id="charRenderTypeStepper" width="100%" verticalAlign="center"> 
+            <data>
+                <item text="Sparrow" id="sparrow" />
+                <item text="Texture Atlas" id="animateatlas" />
+            </data>
+        </option-stepper>
+
+        <label text="Scale:" style="padding: 2px;" verticalAlign="center" />
+        <number-stepper id="charScaleStepper" min="0" step="0.1" width="100%" verticalAlign="center"/>
+
+        <label text="Offsets:" style="padding: 2px;" verticalAlign="center" />
+        <hbox width="100%">
+            <number-stepper id="charOffsetX" step="1" width="100%" verticalAlign="center"/>
+            <number-stepper id="charOffsetY" step="1" width="100%" verticalAlign="center"/>
+        </hbox>
+
+        <label text="Camera Offsets:" style="padding: 2px;" verticalAlign="center" />
+        <hbox width="100%">
+            <number-stepper id="charCamOffsetX" step="1" width="100%" verticalAlign="center"/>
+            <number-stepper id="charCamOffsetY" step="1" width="100%" verticalAlign="center"/>
+        </hbox>
+
+        <label text="Dance Every:" style="padding: 2px;" verticalAlign="center" />
+        <number-stepper id="charDanceEvery" min="0" step="1" width="100%" verticalAlign="center"/>
+
+        <label text="Sing Time:" style="padding: 2px;" verticalAlign="center" />
+        <number-stepper id="charSingTime" min="0" step="1" width="100%" verticalAlign="center"/>
+
+        <label text="Flip X: " style="padding: 2px;" verticalAlign="center" />
+        <option-stepper id="charFlipX" width="100%" verticalAlign="center" tooltip="This does not change the preview because it breaks offsets."> 
+            <data>
+                <item text="True" id="true" />
+                <item text="False" id="false" />
+            </data>
+        </option-stepper>
+
+        <label text="Is Pixel: " style="padding: 2px;" verticalAlign="center" />
+        <option-stepper id="charIsPixel" width="100%" verticalAlign="center"> 
+            <data>
+                <item text="True" id="true" />
+                <item text="False" id="false" />
+            </data>
+        </option-stepper>
+    </grid>
+
+    <spacer height="2" />
+
+    <label text="Animation List: " style="padding: 2px;" verticalAlign="center" />
+    <listview id="charAnimationList" width="100%" height="100%" selectedIndex="0">
+        <item-renderer width="100%" layout="horizontal">
+            <label id="text" width="100%" verticalAlign="center"/>
+            <button id="onion" width="25" height="25" toggle="true">
+                <image resource="images/ui/ghost.png" width="13" height="13" style="margin-left: -8px" /> 
+            </button>
+            <button id="edit" width="25" height="25">
+                <image resource="images/ui/pencil.png" width="13" height="13" style="margin-left: -8px" /> 
+            </button>
+            <button id="delete" width="45" height="25">
+                <image resource="images/ui/bin.png" width="13" height="13" style="margin-left: 2px" /> 
+            </button>
+        </item-renderer>
+            <data/>
+    </listview>
+
+    <spacer height="1" />
+
+    <button id="editHealthIcon" text="Edit Health Icon" width="100%"/>
+
+</window>

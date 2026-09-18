@@ -1,0 +1,543 @@
+// import Main;
+
+import flixel.FlxG;
+import flixel.text.FlxText;
+
+import funkin.Preferences;
+import funkin.modding.module.Module;
+import funkin.modding.module.ModuleHandler;
+
+import haxe.ui.Toolkit;
+import haxe.ui.core.Screen;
+import haxe.ui.core.Component;
+import haxe.ui.containers.Box;
+import haxe.ui.containers.VBox;
+import haxe.ui.containers.Grid;
+import haxe.ui.containers.HBox;
+import haxe.ui.components.Label;
+import haxe.ui.core.TextDisplay;
+import haxe.ui.components.Image;
+import haxe.ui.containers.Header;
+import haxe.ui.components.TabBar;
+import haxe.ui.components.Button;
+import haxe.ui.components.Column;
+import haxe.ui.focus.FocusManager;
+import haxe.ui.containers.TabView;
+import haxe.ui.containers.ListView;
+import haxe.ui.components.TextArea;
+import haxe.ui.components.DropDown;
+import haxe.ui.components.CheckBox;
+import haxe.ui.data.ArrayDataSource;
+import haxe.ui.containers.TableView;
+import haxe.ui.components.TextField;
+import haxe.ui.containers.ScrollView;
+import haxe.ui.containers.menus.Menu;
+import haxe.ui.macros.ComponentMacros;
+import haxe.ui.RuntimeComponentBuilder;
+import haxe.ui.components.OptionStepper;
+import haxe.ui.components.NumberStepper;
+import haxe.ui.containers.menus.MenuBar;
+import haxe.ui.containers.menus.MenuItem;
+import haxe.ui.containers.windows.Window;
+import haxe.ui.containers.dialogs.Dialog;
+import haxe.ui.containers.dialogs.Dialogs;
+import haxe.ui.containers.menus.MenuCheckBox;
+import haxe.ui.containers.HorizontalSplitter;
+import haxe.ui.containers.menus.MenuSeparator;
+import haxe.ui.containers.menus.MenuOptionBox;
+import haxe.ui.notifications.NotificationType;
+import haxe.ui.containers.windows.WindowManager;
+import haxe.ui.containers.dialogs.OpenFileDialog;
+import haxe.ui.notifications.NotificationManager;
+
+class GenzuUI extends Module {
+    public static var getRecentItems = ()->{
+        return [];
+    }
+
+    public static var EDITOR_TITLE:FlxText;
+
+    public static var isSomethingFocused(get, null):Bool;
+    public static function get_isSomethingFocused():Bool {
+        return FocusManager.instance == null ? new FocusManager().focus : FocusManager.instance.focus != null;
+    }
+    
+    public static var focusedObject(get, null):Null<Bool>;
+    public static function get_focusedObject():Null<Bool> {
+        return FocusManager.instance == null ? new FocusManager().focus : FocusManager.instance.focus != null;
+    }
+
+    public static var isCursorOverHaxeUI(get, never):Bool;
+    public static function get_isCursorOverHaxeUI():Bool {
+        return Screen.instance.hasSolidComponentUnderPoint(FlxG.mouse.viewX, FlxG.mouse.viewY);
+    }
+
+    public static var CHARACTER_WINDOW:Window;
+    public static var CHARACTER_GRID:Grid;
+    public static var CHAR_NAME_LABEL:Label;
+
+    public static var CHAR_NAME_TEXTBOX:TextField;
+    
+    public static var CHAR_RENDERTYPE_LABEL:Label;
+    public static var CHAR_RENDERTYPE_OPTIONSTEPPER:OptionStepper;
+    public static var CHAR_ASSETPATH_LABEL:Label;
+    public static var CHAR_ASSETPATH_TEXTBOX:TextField;
+    public static var CHAR_SCALE_LABEL:Label;
+    public static var CHAR_SCALE_NUMBERSTEPPER:NumberStepper;
+    public static var CHAR_OFFSET_HBOX:HBox;
+    public static var CHAR_OFFSET_LABEL:Label;
+    public static var CHAR_OFFSET_NUMBERSTEPPER_X:NumberStepper;
+    public static var CHAR_OFFSET_NUMBERSTEPPER_Y:NumberStepper;
+    public static var CHAR_CAMOFFSET_HBOX:HBox;
+    public static var CHAR_CAMOFFSET_LABEL:Label;
+    public static var CHAR_CAMOFFSET_NUMBERSTEPPER_X:NumberStepper;
+    public static var CHAR_CAMOFFSET_NUMBERSTEPPER_Y:NumberStepper;
+    public static var CHAR_DANCEEVERY_LABEL:Label;
+    public static var CHAR_DANCEEVERY_NUMBERSTEPPER:NumberStepper;
+    public static var CHAR_SINGTIME_LABEL:Label;
+    public static var CHAR_SINGTIME_NUMBERSTEPPER:NumberStepper;
+    public static var CHAR_STARTINGANIM_LABEL:Label;
+    public static var CHAR_STARTINGANIM_TEXTBOX:TextField;
+
+    public static var CHAR_FLIPX_LABEL:Label;
+    public static var CHAR_FLIPX_OPTIONSTEPPER:OptionStepper;
+    public static var CHAR_ISPIXEL_LABEL:Label;
+    public static var CHAR_ISPIXEL_OPTIONSTEPPER:OptionStepper;
+
+    public static var CHAR_EDIT_ICON_BUTTON:Button;
+
+    public static var CHAR_ANIMATIONS_LABEL:Label;
+
+    public static var CHAR_STAGEMATRIX_LABLE:Label;
+    public static var CHAR_STAGEMATRIX_NUMBERSTEPPER:MenuOptionBox;
+
+    public static var MENU_BAR:MenuBar; // Example
+    public static var MENU_DATA = [
+        {
+            title: "File",
+            items: [
+                {
+                    text: "New Character",
+                    id: "newCharacter",
+                    shortcut: "Ctrl+N"
+                },
+                // "separator",
+                /* {
+                    text: "Open File",
+                    id: "openFile"//,
+                    // shortcut: "Ctrl+N"
+                },
+                {
+                    id: "openFileRecent",
+                    menu: "fuckYouGenzu",
+                    data: {
+                        title: "Open Recent", // This sould have a submenu of recent files
+                        items: getRecentItems()
+                    }
+                }, */
+                "separator",
+                /* {
+                    text: "Save",
+                    id: "saveFile",
+                    shortcut: "Ctrl+S"
+                }, */
+                {
+                    text: "Save",
+                    id: "saveFileAs",
+                    shortcut: "Ctrl+S"
+                },
+                {
+                    text: "Save for Psych Engine",
+                    id: "saveFilePsych",
+                    shortcut: "Ctrl+Shift+Alt+S",
+                    disabled: true
+                },
+                {
+                    text: "Save for Codename Engine",
+                    id: "saveFileCodename",
+                    shortcut: "Ctrl+Alt+S",
+                    disabled: true
+                },
+                "separator",
+                {
+                    text: "Exit To Menu",
+                    id: "exitToMenu",
+                    shortcut: "Ctrl+Q"
+                }
+            ]
+        },
+        {
+            title: "Edit",
+            items: [
+                /* {
+                    text: "Undo",
+                    id: "editUndo",
+                    shortcut: "Ctrl+Z"
+                },
+                {
+                    text: "Redo",
+                    id: "editRedo",
+                    shortcut: "Ctrl+Y / Ctrl+Shift+Z"
+                },
+                "separator", */
+                /* {
+                    text: "Cut Offsets",
+                    id: "editCut",
+                    shortcut: "Ctrl+X"
+                }, */
+                {
+                    text: "Edit Health Icon",
+                    id: "editIcon"
+                },
+                "separator",
+                {
+                    text: "Copy Offsets",
+                    id: "editCopy",
+                    shortcut: "Ctrl+C"
+                },
+                {
+                    text: "Paste Offsets",
+                    id: "editPaste",
+                    shortcut: "Ctrl+V"
+                },
+                {
+                    text: "Clear Offsets",
+                    id: "editClear"
+                },
+                "separator",
+                {
+                    text: "New Animation",
+                    id: "editNewAnimation",
+                    shortcut: "Ctrl+Shift+N"
+                },
+                {
+                    text: "Delete Animation",
+                    id: "editDeleteAnimation",
+                    shortcut: "Ctrl+Del"
+                },
+                {
+                    text: "Duplicate Animation",
+                    id: "editDuplicateAnimation",
+                    shortcut: "Ctrl+D"
+                },
+                "separator",
+                {
+                    text: "Clear Animation All Offsets",
+                    id: "editClearAllAnimOffsets",
+                    shortcut: "Ctrl+Shift+Del"
+                }/* ,
+                "separator",
+                {
+                    text: "Delete Character",
+                    id: "deleteChar",
+                    shortcut: "Ctrl+Del"
+                } */
+            ]
+        },
+        /* {
+            title: "Offsets",
+            items: [
+                {
+                    text: "Drag with Mouse", // this should be a bool menu thingy
+                    id: "offsetDrag",
+                    shortcut: "Ctrl+E"
+                }
+            ]
+        }, */
+        /* {
+            title: "Stage",
+            items: [
+                {
+                    id: "openFileRecent",
+                    menu: "fuckYouGenzu",
+                    data: {
+                        title: "Current Stage",
+                        items: getRecentItems()
+                    }
+                },
+            ]
+        }, */
+        {
+            title: "View",
+            items: [
+                /* {
+                    text: "Zoom In",
+                    id: "viewZoomIn",
+                    shortcut: "Ctrl+[+]"
+                },
+                {
+                    text: "Zoom Out", 
+                    id: "viewZoomOut",
+                    shortcut: "Ctrl+[-]"
+                }, */
+                {
+                    text: "Reset Zoom",
+                    id: "viewZoomReset",
+                    shortcut: "Ctrl+R"
+                }/* ,
+                {
+                    text: "Use Stage Zoom",
+                    id: "viewZoomReset",
+                    shortcut: "Ctrl+[1]"
+                },
+                {
+                    id: "theme",
+                    menu: "trueNGL",
+                    data: {
+                        title: "Theme",
+                        items: [
+                            {
+                                text: "Dark Mode",
+                                id: "darkMode",
+                                onClick: ()->changeTheme('dark')
+                            },
+                            {
+                                text: "Light Mode",
+                                id: "lightMode",
+                                onClick: ()->changeTheme('light')
+                            }
+                        ]
+                    }
+                } */
+            ]
+        },
+        {
+            title: "Help",
+            items: [
+                {
+                    text: "Re-Download Editor",
+                    shortcut: "Coming Soon!",
+                    enabled: false
+                },
+                {
+                    text: "Check For Updates",
+                    shortcut: "Coming Soon!",
+                    enabled: false
+                },
+                {
+                    text: "User Guide",
+                    id: "helpUserGuide",
+                    shortcut: "F1"
+                }
+            ]
+        }
+    ];
+
+    public static function changeTheme(theme:String) {
+        Toolkit.theme = theme;
+        Toolkit.styleSheet.parse(".body, .label, .link, .textfield, .textarea { font-name: \"Inconsolata\"; font-size: 14px; font-bold: true; }");
+
+        if (FlxG.state.bg == null) return;
+        FlxG.state.bg.alpha = theme == 'dark' ? 0.2 : 1;
+    }
+
+    public function processMenu(m, root) {
+        var menu = new Menu();
+        menu.text = m.title;
+        if (m.id != null) menu.id = m.id;
+        menu.width = 320;
+        root.addComponent(menu);
+
+        for (i in m.items) {
+            if (i.menu != null) {
+                processMenu(i.data, menu);
+                continue;
+            }
+            
+            if (i == "separator") {
+                menu.addComponent(new MenuSeparator());
+                continue;
+            }
+
+            var item = new MenuItem();
+            item.text = i.text;
+            item.shortcutText = i.shortcut;
+            item.id = i.id;
+            if (i.onClick != null) item.onClick = i.onClick;
+            if (i.disabled != null) item.disabled = i.disabled;
+            if (i.enabled != null) item.disabled = !i.enabled;
+            menu.addComponent(item);
+        }
+    }
+
+    public static function checkForDebug() {
+        // NVM LOL
+    }
+
+    public static function initializeUI() {
+        Toolkit.styleSheet.parse(".body, .label, .link, .textfield, .textarea { font-name: \"Inconsolata\"; font-size: 14px; font-bold: true; }");
+        return;
+
+        GenzuUI.MENU_BAR = new MenuBar();
+        GenzuUI.MENU_BAR.width = FlxG.width;
+        FlxG.state.insert(0, GenzuUI.MENU_BAR);
+        
+        var seperator = new Box();
+        seperator.id = "paddingLeft";
+        seperator.width = Preferences.debugDisplay.toString() != "Off" ? 240 : 0;
+        GenzuUI.MENU_BAR.addComponent(seperator);
+
+        for (m in MENU_DATA) {
+            ModuleHandler.getModule("GenzuUI").scriptCall('processMenu', [m, GenzuUI.MENU_BAR]);
+        }
+
+        var windowPadding = 10;
+
+        GenzuUI.CHARACTER_WINDOW = new Window();
+        GenzuUI.CHARACTER_WINDOW.title = "Character Data";
+        GenzuUI.CHARACTER_WINDOW.set_width(352);
+        GenzuUI.CHARACTER_WINDOW.set_height(FlxG.height - 39 - (windowPadding * 2));
+        GenzuUI.CHARACTER_WINDOW.x = FlxG.width - GenzuUI.CHARACTER_WINDOW.width - windowPadding;
+        GenzuUI.CHARACTER_WINDOW.y = 39 + windowPadding;
+        GenzuUI.CHARACTER_WINDOW.draggable = false;
+        FlxG.state.addWindow(GenzuUI.CHARACTER_WINDOW);
+
+        GenzuUI.CHARACTER_GRID = new Grid();
+        GenzuUI.CHARACTER_WINDOW.addComponent(GenzuUI.CHARACTER_GRID);
+
+        GenzuUI.CHAR_NAME_LABEL = new Label();
+        GenzuUI.CHAR_NAME_LABEL.text = "Character Name:";
+        GenzuUI.CHAR_NAME_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_NAME_LABEL);
+
+        GenzuUI.CHAR_NAME_TEXTBOX = new TextField();
+        GenzuUI.CHAR_NAME_TEXTBOX.width = 165;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_NAME_TEXTBOX);
+
+        GenzuUI.CHAR_RENDERTYPE_LABEL = new Label();
+        GenzuUI.CHAR_RENDERTYPE_LABEL.text = "Render Type:";
+        GenzuUI.CHAR_RENDERTYPE_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_RENDERTYPE_LABEL);
+
+        GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER = new OptionStepper();
+        GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER.width = 165;
+        GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER.dataSource = new ArrayDataSource();
+        GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER.dataSource.add({text: "Sparrow", id: "sparrow"});
+        // GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER.dataSource.add({text: "Multi-Sparrow", id: "multisparrow"});
+        GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER.dataSource.add({text: "Texture Atlas", id: "animateatlas"});
+        // GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER.dataSource.add({text: "Multi-Atlas", id: "multianimateatlas"});
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_RENDERTYPE_OPTIONSTEPPER);
+
+        GenzuUI.CHAR_ASSETPATH_LABEL = new Label();
+        GenzuUI.CHAR_ASSETPATH_LABEL.text = "Asset Path:";
+        GenzuUI.CHAR_ASSETPATH_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_ASSETPATH_LABEL);
+
+        GenzuUI.CHAR_ASSETPATH_TEXTBOX = new TextField();
+        GenzuUI.CHAR_ASSETPATH_TEXTBOX.width = 165;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_ASSETPATH_TEXTBOX);
+
+        GenzuUI.CHAR_SCALE_LABEL = new Label();
+        GenzuUI.CHAR_SCALE_LABEL.text = "Scale:";
+        GenzuUI.CHAR_SCALE_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_SCALE_LABEL);
+        
+        GenzuUI.CHAR_SCALE_NUMBERSTEPPER = new NumberStepper();
+        GenzuUI.CHAR_SCALE_NUMBERSTEPPER.step = 0.1;
+        GenzuUI.CHAR_SCALE_NUMBERSTEPPER.width = 165;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_SCALE_NUMBERSTEPPER);
+
+        GenzuUI.CHAR_OFFSET_LABEL = new Label();
+        GenzuUI.CHAR_OFFSET_LABEL.text = "Offsets:";
+        GenzuUI.CHAR_OFFSET_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_OFFSET_LABEL);
+
+        GenzuUI.CHAR_OFFSET_HBOX = new HBox();
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_OFFSET_HBOX);
+
+        GenzuUI.CHAR_OFFSET_NUMBERSTEPPER_X = new NumberStepper();
+        GenzuUI.CHAR_OFFSET_HBOX.addComponent(GenzuUI.CHAR_OFFSET_NUMBERSTEPPER_X);
+        
+        GenzuUI.CHAR_OFFSET_NUMBERSTEPPER_Y = new NumberStepper();
+        GenzuUI.CHAR_OFFSET_HBOX.addComponent(GenzuUI.CHAR_OFFSET_NUMBERSTEPPER_Y);
+        
+        GenzuUI.CHAR_CAMOFFSET_LABEL = new Label();
+        GenzuUI.CHAR_CAMOFFSET_LABEL.text = "Camera Offsets:";
+        GenzuUI.CHAR_CAMOFFSET_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_CAMOFFSET_LABEL);
+        
+        GenzuUI.CHAR_CAMOFFSET_HBOX = new HBox();
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_CAMOFFSET_HBOX);
+        
+        GenzuUI.CHAR_CAMOFFSET_NUMBERSTEPPER_X = new NumberStepper();
+        GenzuUI.CHAR_CAMOFFSET_HBOX.addComponent(GenzuUI.CHAR_CAMOFFSET_NUMBERSTEPPER_X);
+        
+        GenzuUI.CHAR_CAMOFFSET_NUMBERSTEPPER_Y = new NumberStepper();
+        GenzuUI.CHAR_CAMOFFSET_HBOX.addComponent(GenzuUI.CHAR_CAMOFFSET_NUMBERSTEPPER_Y);
+        
+        GenzuUI.CHAR_DANCEEVERY_LABEL = new Label();
+        GenzuUI.CHAR_DANCEEVERY_LABEL.text = "Dance Every:";
+        GenzuUI.CHAR_DANCEEVERY_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_DANCEEVERY_LABEL);
+        
+        GenzuUI.CHAR_DANCEEVERY_NUMBERSTEPPER = new NumberStepper();
+        GenzuUI.CHAR_DANCEEVERY_NUMBERSTEPPER.width = 165;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_DANCEEVERY_NUMBERSTEPPER);
+        
+        GenzuUI.CHAR_SINGTIME_LABEL = new Label();
+        GenzuUI.CHAR_SINGTIME_LABEL.text = "Sing Time:";
+        GenzuUI.CHAR_SINGTIME_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_SINGTIME_LABEL);
+        
+        GenzuUI.CHAR_SINGTIME_NUMBERSTEPPER = new NumberStepper();
+        GenzuUI.CHAR_SINGTIME_NUMBERSTEPPER.width = 165;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_SINGTIME_NUMBERSTEPPER);
+        
+        GenzuUI.CHAR_STARTINGANIM_LABEL = new Label();
+        GenzuUI.CHAR_STARTINGANIM_LABEL.text = "Starting Animation:";
+        GenzuUI.CHAR_STARTINGANIM_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_STARTINGANIM_LABEL);
+        
+        GenzuUI.CHAR_STARTINGANIM_TEXTBOX = new TextField();
+        GenzuUI.CHAR_STARTINGANIM_TEXTBOX.width = 165;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_STARTINGANIM_TEXTBOX);
+        
+        GenzuUI.CHAR_FLIPX_LABEL = new Label();
+        GenzuUI.CHAR_FLIPX_LABEL.text = "Flip X:";
+        GenzuUI.CHAR_FLIPX_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_FLIPX_LABEL);
+
+        GenzuUI.CHAR_FLIPX_OPTIONSTEPPER = new OptionStepper();
+        GenzuUI.CHAR_FLIPX_OPTIONSTEPPER.width = 165;
+        GenzuUI.CHAR_FLIPX_OPTIONSTEPPER.dataSource = new ArrayDataSource();
+        GenzuUI.CHAR_FLIPX_OPTIONSTEPPER.dataSource.add({text: "True", id: true});
+        GenzuUI.CHAR_FLIPX_OPTIONSTEPPER.dataSource.add({text: "False", id: false});
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_FLIPX_OPTIONSTEPPER);
+        
+        GenzuUI.CHAR_ISPIXEL_LABEL = new Label();
+        GenzuUI.CHAR_ISPIXEL_LABEL.text = "Is Pixel:";
+        GenzuUI.CHAR_ISPIXEL_LABEL.padding = 5;
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_ISPIXEL_LABEL);
+
+        GenzuUI.CHAR_ISPIXEL_OPTIONSTEPPER = new OptionStepper();
+        GenzuUI.CHAR_ISPIXEL_OPTIONSTEPPER.width = 165;
+        GenzuUI.CHAR_ISPIXEL_OPTIONSTEPPER.dataSource = new ArrayDataSource();
+        GenzuUI.CHAR_ISPIXEL_OPTIONSTEPPER.dataSource.add({text: "True", id: true});
+        GenzuUI.CHAR_ISPIXEL_OPTIONSTEPPER.dataSource.add({text: "False", id: false});
+        GenzuUI.CHARACTER_GRID.addComponent(GenzuUI.CHAR_ISPIXEL_OPTIONSTEPPER);
+        
+        GenzuUI.CHAR_ANIMATIONS_LABEL = new Label();
+        GenzuUI.CHAR_ANIMATIONS_LABEL.text = "Animations:";
+        GenzuUI.CHAR_ANIMATIONS_LABEL.padding = 5;
+        GenzuUI.CHARACTER_WINDOW.addComponent(GenzuUI.CHAR_ANIMATIONS_LABEL);
+
+        GenzuUI.EDITOR_TITLE = new FlxText(0, 0, null, "Nova Character Creator v4.0.0");
+        GenzuUI.EDITOR_TITLE.font = Paths.font("Inconsolata-Bold.ttf");
+        GenzuUI.EDITOR_TITLE.size = 14;
+        GenzuUI.EDITOR_TITLE.alpha = 0.5;
+        GenzuUI.EDITOR_TITLE.updateHitbox();
+        GenzuUI.EDITOR_TITLE.x = FlxG.width - GenzuUI.EDITOR_TITLE.width - 15;
+        GenzuUI.EDITOR_TITLE.y = 10;
+        FlxG.state.insert(2, GenzuUI.EDITOR_TITLE);
+    }
+
+    
+    
+
+    public static var closeNextFrame = false;
+
+    public function onUpdate(event) {
+        super.onUpdate(event);
+    }
+
+}

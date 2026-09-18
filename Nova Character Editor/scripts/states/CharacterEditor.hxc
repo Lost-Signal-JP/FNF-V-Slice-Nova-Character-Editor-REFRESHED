@@ -1,0 +1,1288 @@
+import Reflect;
+import StringTools;
+import haxe.Json;
+import haxe.ui.Toolkit;
+import haxe.ui.RuntimeComponentBuilder;
+import haxe.ui.components.Button;
+import haxe.ui.components.CheckBox;
+import haxe.ui.components.Column;
+import haxe.ui.components.DropDown;
+import haxe.ui.components.Image;
+import haxe.ui.components.Label;
+import haxe.ui.components.Link;
+import haxe.ui.components.NumberStepper;
+import haxe.ui.components.TabBar;
+import haxe.ui.components.TextArea;
+import haxe.ui.components.TextField;
+import haxe.ui.containers.Box;
+import haxe.ui.containers.HBox;
+import haxe.ui.containers.Header;
+import haxe.ui.containers.HorizontalSplitter;
+import haxe.ui.containers.ListView;
+import haxe.ui.containers.ScrollView;
+import haxe.ui.containers.TabView;
+import haxe.ui.containers.TableView;
+import haxe.ui.containers.TableView;
+import haxe.ui.containers.VBox;
+// import haxe.ui.containers.dialogs.Dialog.DialogButton;
+import haxe.ui.containers.dialogs.Dialog;
+// import haxe.ui.containers.dialogs.Dialogs.FileDialogTypes;
+import haxe.ui.containers.dialogs.Dialogs;
+import haxe.ui.containers.dialogs.OpenFileDialog;
+import haxe.ui.containers.menus.Menu;
+import haxe.ui.containers.menus.MenuBar;
+import haxe.ui.containers.menus.MenuCheckBox;
+import haxe.ui.containers.menus.MenuItem;
+import haxe.ui.containers.menus.MenuOptionBox;
+import haxe.ui.containers.menus.MenuSeparator;
+import haxe.ui.containers.windows.Window;
+import haxe.ui.containers.windows.WindowManager;
+import haxe.ui.core.Component;
+import haxe.ui.core.Screen;
+import haxe.ui.core.TextDisplay;
+import haxe.ui.data.ArrayDataSource;
+import haxe.ui.macros.ComponentMacros;
+import haxe.ui.notifications.NotificationManager;
+import haxe.ui.notifications.NotificationType;
+import flixel.FlxCamera;
+import flixel.FlxG;
+import flixel.text.FlxText;
+import flixel.util.FlxColor;
+import flixel.util.FlxTimer;
+import funkin.audio.FunkinSound;
+import funkin.graphics.FunkinSprite;
+import funkin.input.Cursor;
+import funkin.modding.PolymodHandler;
+import funkin.modding.base.ScriptedMusicBeatState;
+// import funkin.play.character.CharacterData;
+import funkin.play.character.CharacterDataParser;
+import funkin.play.components.HealthIcon;
+import funkin.ui.MusicBeatState;
+import funkin.ui.mainmenu.MainMenuState;
+import funkin.util.FileUtil;
+import funkin.util.MathUtil;
+import json2object.JsonWriter;
+import haxe.ui.backend.flixel.UIState;
+import haxe.ui.containers.Box;
+import haxe.ui.events.UIEvent;
+import funkin.modding.module.Module;
+import funkin.modding.module.ModuleHandler;
+import funkin.util.SortUtil;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+
+import haxe.ui.focus.FocusManager;
+
+// Character Classes or whatever bro;
+import funkin.play.character.SparrowCharacter;
+import funkin.play.character.AnimateAtlasCharacter;
+import funkin.play.character.MultiSparrowCharacter;
+import funkin.play.character.MultiAnimateAtlasCharacter;
+
+import flixel.text.FlxText;
+import flixel.text.FlxTextBorderStyle;
+
+import Reflect;
+
+import Xml;
+
+import StringTools;
+using StringTools;
+
+class CharacterEditor extends MusicBeatState {
+
+    function new() {
+        super('CharacterEditor');
+    }
+
+    //     -- Haxe UI --     \\
+   
+    public var MENU_BAR:MenuBar;
+    public var CHARACTER_WINDOW:Window;
+    public var USER_GUIDE_WINDOW:Window;
+
+    public var isSomethingFocused(get, null):Bool;
+    public function get_isSomethingFocused():Bool {
+        return FocusManager.instance == null ? new FocusManager().focus : FocusManager.instance.focus != null;
+    }
+    
+    public var focusedObject(get, null):Null<Bool>;
+    public function get_focusedObject():Null<Bool> {
+        return FocusManager.instance == null ? new FocusManager().focus : FocusManager.instance.focus != null;
+    }
+
+    public var isCursorOverHaxeUI(get, never):Bool;
+    public function get_isCursorOverHaxeUI():Bool {
+        return Screen.instance.hasSolidComponentUnderPoint(FlxG.mouse.viewX, FlxG.mouse.viewY);
+    }
+
+    // -- Everything Else -- \\
+
+    public var clipboard = [ 0, 0 ];
+
+    public var editingOffsetsText:FlxText;
+
+    public var camHUD2:FlxCamera;
+    public var camHUD:FlxCamera;
+	public var camGame:FlxCamera;
+    public var camBackground:FlxCamera;
+    public var camDialog:FlxCamera;
+
+    public var bypassInput:Bool = false;
+
+
+    public var editingCharacter;
+
+    public var bg:FunkinSprite;
+
+    public var bindingRoot:Bool = false;
+
+    public var windowManager:WindowManager = new WindowManager();
+
+    public var root:Box = new Box(); // root component is always a box for now, since there is no nice / easy way to get the root node info from the macro
+
+    public var onionSkins = [
+        "init" => new FunkinSprite()
+    ];
+
+    private function applyRootLayout(l:String) {
+        if (l == "vbox") {
+            root.layout = LayoutFactory.createFromName("vertical");
+        } else if (l == "hbox") {
+            root.layout = LayoutFactory.createFromName("horizontal");
+        }
+    }
+
+    public function addWindow(window:Window) {
+        window.windowManager = windowManager;
+        window.draggable = false;
+        window.maximizable = false;
+        window.closable = false;
+        window.collapsable = false;
+        window.minimizable = false;
+        window.cameras = [camHUD2];
+        window.camera = camHUD2;
+        insert(0, window);
+    }
+
+    public override function create() {
+        super.create();
+
+        // TODO FUCK YOU RODNEY !!! 
+
+        SaveUtil.createSave("character-editor");
+        if (SaveUtil.checkForSave("character-editor").get("recent") == null || SaveUtil.checkForSave("character-editor").get("recent").get("list") == null)
+            SaveUtil.writeToSave("character-editor", "recent", {list: []});
+
+        camBackground = new FlxCamera();
+        camBackground.bgColor = 0xFF000000;
+        FlxG.cameras.add(camBackground, false);
+
+        camGame = new FlxCamera();
+        camGame.bgColor = 0x00000000;
+        FlxG.cameras.add(camGame, false);
+
+        camHUD2 = new FlxCamera();
+        camHUD2.bgColor = 0x00000000;
+        FlxG.cameras.add(camHUD2, false);
+
+        camHUD = new FlxCamera();
+        camHUD.bgColor = 0x00000000;
+        FlxG.cameras.add(camHUD, true);
+        
+        camDialog = new FlxCamera();
+        camDialog.bgColor = 0x00000000;
+        FlxG.cameras.add(camDialog, true);
+
+        bg = new FunkinSprite(0, 0).loadGraphic(Paths.image('menuDesat'));
+		bg.scrollFactor.set(0, 0);
+		bg.setGraphicSize(FlxG.width, FlxG.height);
+		bg.updateHitbox();
+		bg.screenCenter();
+        bg.camera = camBackground;
+		bg.alpha = 0.5;
+		// bg.cameras = [camBackground];
+		add(bg);
+
+        root = new Box();
+        root.registerEvent(UIEvent.READY, (_) -> {
+            onReady();
+        });
+        add(root);
+
+        
+    }
+
+    private function onReady() {
+        Cursor.show();
+        validateNow();
+        applyRootLayout('horizontal');
+        initializeUI();
+        initializeCallbacks();
+        openWelcomeDialog();
+
+        FunkinSound.playMusic('chartEditorLoop', {startingVolume: 0, overrideExisting: true, restartTrack: false, persist: true, loop: true});
+		FlxG.sound.music.fadeIn(0.5 , 0, 1);
+
+        /* findComponent("charAnimationList") = RuntimeComponentBuilder.build(Paths.ui("character-editor/animationList"));
+        findComponent("charAnimationList").width = CHARACTER_WINDOW.width - 35;
+        findComponent("charAnimationList").height = 175;
+        CHARACTER_WINDOW.addComponent(findComponent("charAnimationList"));
+
+
+        
+
+        var BOX = new Box();
+        BOX.height = 0;
+        CHARACTER_WINDOW.addComponent(BOX);
+        
+        GenzuUI.CHAR_EDIT_ICON_BUTTON = new Button();
+        GenzuUI.CHAR_EDIT_ICON_BUTTON.text = "Edit Health Icon";
+        GenzuUI.CHAR_EDIT_ICON_BUTTON.width = CHARACTER_WINDOW.width - 35;
+        GenzuUI.CHAR_EDIT_ICON_BUTTON.onClick = openIconDialog;
+        CHARACTER_WINDOW.addComponent(GenzuUI.CHAR_EDIT_ICON_BUTTON);
+
+
+        GenzuUI.MENU_BAR.cameras = [camBackground];
+        GenzuUI.EDITOR_TITLE.cameras = [camHUD2]; */
+         
+        editingOffsetsText = new FlxText(0, 50, FlxG.width, "[EDITING OFFSETS]");
+		editingOffsetsText.visible = false;
+		editingOffsetsText.cameras = [camHUD];
+		editingOffsetsText.size = 30;
+		editingOffsetsText.borderStyle = FlxTextBorderStyle.OUTLINE;
+		editingOffsetsText.borderSize = 3;
+        editingOffsetsText.x = 10;
+        editingOffsetsText.y = FlxG.height - editingOffsetsText.height - 10;
+		add(editingOffsetsText);
+    }
+
+    public function setOnClick(id:String, callback) {
+        (root.findComponent(id) != null ? root.findComponent(id) : MENU_BAR.findComponent(id)).onClick = callback;
+        // trace(recursiveCheck(id, GenzuUI.MENU_DATA).id);
+    }
+
+    public function initializeUI() {
+        Toolkit.styleSheet.parse(".body, .label, .link, .textfield, .textarea { font-name: \"Inconsolata\"; font-size: 14px; font-bold: true; }");
+        
+        MENU_BAR = RuntimeComponentBuilder.build(Paths.ui("character-editor/menubar"));
+        MENU_BAR.cameras = [camHUD];
+        add(MENU_BAR);
+
+        var windowPadding = 10;
+
+        CHARACTER_WINDOW = RuntimeComponentBuilder.build(Paths.ui("character-editor/characterDataWindow"));
+        CHARACTER_WINDOW.set_height(FlxG.height - 39 - (windowPadding * 2));
+        CHARACTER_WINDOW.x = FlxG.width - CHARACTER_WINDOW.width - windowPadding;
+        CHARACTER_WINDOW.y = 39 + windowPadding;
+        addWindow(CHARACTER_WINDOW);
+    }
+
+    public function initializeCallbacks() {
+        setOnClick("saveCharacter", saveCharacter);
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "S"], saveCharacter, ()->{ return !FlxG.keys.pressed.SHIFT; });
+
+        setOnClick("newCharacter", openWelcomeDialog);
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "N"], openWelcomeDialog, ()->{ return !FlxG.keys.pressed.SHIFT; });
+        
+        setOnClick("editHealthIcon", openIconDialog);
+        
+        setOnClick("editCopyOffests", copyOffsets);
+        setOnClick("editPasteOffsets", pasteOffsets);
+        setOnClick("editClearOffsets", ()->{ setOffsetAnimation(0, 0); setOffsetAnimation(1, 0); });
+        
+        setOnClick("editNewAnimation", newAnimation);
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "SHIFT", "N"], newAnimation);
+        setOnClick("editDeleteAnimation", ()->deleteAnimation(editingCharacter.animation.name));
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "DELETE"], ()->deleteAnimation(editingCharacter.animation.name));
+        setOnClick("editDuplicateAnimation", duplicateAnimation);
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "D"], duplicateAnimation);
+        setOnClick("editClearAllOffsets", clearAllAnimationOffsets);
+        
+        setOnClick("viewResetZoom", resetCameraZoom);
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "R"], resetCameraZoom);
+        
+        setOnClick("helpUserGuide", openUserGuideWindow);
+        KeybindHandlerCHARACTER.addKeybind(["F1"], openUserGuideWindow);
+
+        
+        var exit = ()->{
+            FlxG.switchState(new MainMenuState());
+            PolymodHandler.forceReloadAssets();
+		}
+        setOnClick("exitToMenu", exit);
+        KeybindHandlerCHARACTER.addKeybind(["CONTROL", "Q"], exit);
+        
+        setOnClick("editHealthIcon", openIconDialog);
+    }
+
+    public function saveCharacter() {
+        Dialogs.saveTextFile("Save Character File", [{label: "V-Slice Character File", extension: "json"}], {name: editingCharacter.characterId + ".json", text: Serialize.process(editingCharacter._data)}, function(string, bool){});
+    }
+
+    public function openWelcomeDialog() {
+        remove(CHARACTER_WINDOW);
+        addWindow(CHARACTER_WINDOW);
+        remove(MENU_BAR);
+        add(MENU_BAR);
+        // trace(SaveUtil.getFromSave("character-editor", "recent").get(0));
+        // return;
+        var welcomeScreen = RuntimeComponentBuilder.build(Paths.ui("character-editor/dialogs/welcome"));
+        welcomeScreen.closable = false;
+        welcomeScreen.showDialog(true);
+        welcomeScreen.cameras = [camDialog];
+        KeybindHandlerCHARACTER.CANCEL_INPUT = true;
+
+        welcomeScreen.findComponent("splashImportCharacterCNE").onClick = ()->{
+            var cneFilter = {
+                readContents: true,
+                title: "Open Character File",
+                readAsBinary: false,
+                extensions: [{label: "Codename Engine Character", extension: "xml"}]
+            };
+
+            Dialogs.openFile(function(button, selectedFiles) {
+                if (button == "{{ok}}") {
+                    var id = selectedFiles[0].name.replace(".xml", "");
+                    var convertedFile = NovaCharacterConverters.charFromCNE(Xml.parse(selectedFiles[0].text), id);
+                    welcomeScreen.hideDialog();
+                    KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+                    CHARACTER_WINDOW.disabled = false;
+
+                    var name = id.split("");
+                    name[0] = name[0].toUpperCase();
+                    name = name.join("");
+
+                    editingCharacter = CharacterDataParser.fetchCharacter("pico");
+                    editingCharacter._data = Json.parse(Serialize.process(convertedFile));
+                    editingCharacter._data.name = name;
+                    editingCharacter.characterId = "newCharacter";
+                    
+                    reloadCharacter();
+                    populateCharacterData();
+                    refreshAnimationList();
+                }
+            }, cneFilter);
+        }
+
+        welcomeScreen.findComponent("splashImportCharacterPsych").onClick = ()->{
+            var psychFilter = {
+                readContents: true,
+                title: "Open Character File",
+                readAsBinary: false,
+                extensions: [{label: "Psych Engine Character", extension: "json"}]
+            };
+
+            Dialogs.openFile(function(button, selectedFiles) {
+                if (button == "{{ok}}") {
+                    var id = selectedFiles[0].name.replace(".json", "");
+                    var convertedFile = NovaCharacterConverters.charFromPsych(Json.parse(selectedFiles[0].text), id);
+                    welcomeScreen.hideDialog();
+                    KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+                    CHARACTER_WINDOW.disabled = false;
+                    
+                    var name = id.split("");
+                    name[0] = name[0].toUpperCase();
+                    name = name.join("");
+                    
+                    editingCharacter = CharacterDataParser.fetchCharacter("pico");
+                    editingCharacter._data = Json.parse(Serialize.process(convertedFile));
+                    editingCharacter._data.name = name;
+                    editingCharacter.characterId = "newCharacter";
+                    
+                    reloadCharacter();
+                    populateCharacterData();
+                    refreshAnimationList();
+                    
+                }
+            }, psychFilter);
+        }
+        
+        welcomeScreen.findComponent("splashCreateSparrow").onClick = ()->{
+            editingCharacter != null ? remove(editingCharacter) : 0;
+            welcomeScreen.hideDialog();
+            KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+            CHARACTER_WINDOW.disabled = false;
+            
+            editingCharacter = CharacterDataParser.fetchCharacter("pico");
+            editingCharacter._data = Json.parse(Serialize.process(NovaCharacterConverters.getBaseTemplate()));
+            editingCharacter.characterId = "newCharacter";
+            editingCharacter._data.assetPath = "characters/";
+            editingCharacter._data.renderType = "sparrow";
+            
+            reloadCharacter();
+            populateCharacterData();
+            refreshAnimationList();
+        }
+        
+        welcomeScreen.findComponent("splashCreateAnimateAtlas").onClick = ()->{
+            editingCharacter != null ? remove(editingCharacter) : 0;
+            welcomeScreen.hideDialog();
+            KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+            CHARACTER_WINDOW.disabled = false;
+            
+            editingCharacter = CharacterDataParser.fetchCharacter("pico");
+            editingCharacter._data = Json.parse(Serialize.process(NovaCharacterConverters.getBaseTemplate()));
+            editingCharacter.characterId = "newCharacter";
+            editingCharacter._data.assetPath = "shared:characters/";
+            editingCharacter._data.renderType = "animateatlas";
+
+            reloadCharacter();
+            populateCharacterData();
+            refreshAnimationList();
+        }
+    
+        remove(CHARACTER_WINDOW);
+        addWindow(CHARACTER_WINDOW);
+        CHARACTER_WINDOW.disabled = true;
+
+        var mapCuzFckMyLife = [
+            "init" => true
+        ];
+        mapCuzFckMyLife.clear();
+
+        var ids = [for (i in CharacterDataParser.characterCache.keys()) i];
+        ids.sort(SortUtil.alphabetically);
+
+        for (i in ids) {
+            // if (!blackList.contains(i)) { 
+            var link = new Link();
+            link.text = CharacterDataParser.characterCache.get(i).name;
+            link.id = i;
+            // link.tooltip = i;
+            var callback = ()->{
+                if (members.contains(editingCharacter) && editingCharacter != null) remove(editingCharacter);
+                editingCharacter = CharacterDataParser.fetchCharacter(link.id);
+                editingCharacter.debug = true;
+                editingCharacter.camera = camGame;
+                editingCharacter.screenCenter();
+                editingCharacter.x -= FlxG.width / 6;
+                editingCharacter.flipX = false;
+                add(editingCharacter);
+                welcomeScreen.hideDialog();
+                KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+                FlxTimer.wait(0.05, ()->{
+                    FocusManager.instance = new FocusManager();
+                    FocusManager.instance.focus = null;
+                });
+
+                populateCharacterData();
+
+                var theThing = SaveUtil.checkForSave("character-editor").get("recent").get("list");
+                theThing.remove(link.id);
+                theThing.insert(0, link.id);
+
+                while (theThing.length > 5) {
+                    theThing.pop();
+                }
+
+                SaveUtil.writeToSave("character-editor", "recent", {list: theThing});
+                CHARACTER_WINDOW.disabled = false;
+            }
+            mapCuzFckMyLife.set(link.id, callback);
+            link.onClick = callback;
+            welcomeScreen.findComponent("splashTemplateContainer").addComponent(link);
+            // }
+        }
+        trace(SaveUtil.checkForSave("character-editor").get("recent"));
+
+        var data = SaveUtil.checkForSave("character-editor").get("recent").get("list");
+        if (data + "" != "null") {
+            trace("fuck you nih");
+            for (i in data) {
+            
+                trace(i);
+                if (CharacterDataParser.characterCache.get(i) == null) continue;
+                trace("fuck you nih");
+                var link = new Link();
+                link.text = CharacterDataParser.characterCache.get(i).name;
+                link.id = i;
+                link.onClick = mapCuzFckMyLife.get(i);
+                welcomeScreen.findComponent("splashRecentContainer").addComponent(link);
+            }
+        }
+    }
+
+    public function findComponent(id:String) {
+        return CHARACTER_WINDOW.findComponent(id);
+    }
+
+    public function populateCharacterData() {
+        // Update the character data window or whatever....
+
+        findComponent("charNameField").text = editingCharacter._data.name;
+        findComponent("charNameField").onChange = ()->{
+            editingCharacter._data.name = findComponent("charNameField").text;
+        }
+        
+        findComponent("charAssetPath").text = editingCharacter._data.assetPath.replace("shared:characters/", "").replace("characters/");
+        findComponent("charAssetPath").onChange = ()->{
+            editingCharacter._data.assetPath = (editingCharacter._data.assetPath.startsWith("shared:") ? "shared:" : "") + "characters/" + findComponent("charAssetPath").text;
+            reloadCharacter();
+        }
+
+        findComponent("charStartAnim").text = editingCharacter._data.startingAnimation;
+        findComponent("charStartAnim").onChange = ()->{
+            editingCharacter._data.startingAnimation = findComponent("charStartAnim").text;
+        }
+
+        findComponent("charRenderTypeStepper").selectedIndex = ["sparrow", "animateatlas", "multisparrow", "multianimateatlas"].indexOf(editingCharacter._data.renderType) % 2;
+        findComponent("charRenderTypeStepper").onChange = () -> {
+            editingCharacter._data.renderType = getRenderType();
+            reloadCharacter();
+        };
+        findComponent("charRenderTypeStepper").onClick = ()->{
+            findComponent("charRenderTypeStepper").selectedIndex++;
+            findComponent("charRenderTypeStepper").selectedIndex = findComponent("charRenderTypeStepper").selectedIndex % 2;
+        }
+        
+        findComponent("charScaleStepper").pos = editingCharacter._data.scale;
+        findComponent("charScaleStepper").onChange = ()->{
+            editingCharacter._data.scale = findComponent("charScaleStepper").pos;
+            reloadCharacter();
+        }
+        
+        findComponent("charOffsetX").pos = editingCharacter._data.offsets[0];
+        findComponent("charOffsetY").pos = editingCharacter._data.offsets[1];
+        findComponent("charOffsetX").onChange = ()->{
+            editingCharacter._data.offsets[0] = findComponent("charOffsetX").pos;
+            reloadCharacter();
+        }
+        findComponent("charOffsetY").onChange = ()->{
+            editingCharacter._data.offsets[1] = findComponent("charOffsetY").pos;
+            reloadCharacter();
+        }
+        
+        findComponent("charCamOffsetX").pos = editingCharacter._data.cameraOffsets[0];
+        findComponent("charCamOffsetY").pos = editingCharacter._data.cameraOffsets[1];
+        findComponent("charCamOffsetX").onChange = ()->{
+            editingCharacter._data.cameraOffsets[0] = findComponent("charCamOffsetX").pos;
+        }
+        findComponent("charCamOffsetY").onChange = ()->{
+            editingCharacter._data.cameraOffsets[1] = findComponent("charCamOffsetY").pos;
+        }
+        
+        findComponent("charDanceEvery").pos = editingCharacter._data.danceEvery;
+        findComponent("charDanceEvery").onChange = ()->{
+            editingCharacter._data.danceEvery = findComponent("charDanceEvery").pos;
+        }
+        
+        findComponent("charSingTime").pos = editingCharacter._data.singTime;
+        findComponent("charSingTime").onChange = ()->{
+            editingCharacter._data.singTime = findComponent("charSingTime").pos;
+        }
+
+        findComponent("charFlipX").selectedIndex = [true, false].indexOf(editingCharacter._data.flipX);
+        findComponent("charFlipX").onChange = ()->{
+            editingCharacter._data.flipX = findComponent("charFlipX").selectedItem.id == "true";
+        }
+        findComponent("charFlipX").onClick = ()->{
+            findComponent("charFlipX").selectedIndex++;
+            findComponent("charFlipX").selectedIndex = findComponent("charFlipX").selectedIndex % 2;
+        }
+
+        findComponent("charIsPixel").selectedIndex = [true, false].indexOf(editingCharacter._data.isPixel);
+        findComponent("charIsPixel").onChange = ()->{
+            editingCharacter._data.isPixel = findComponent("charIsPixel").selectedItem.id == "true";
+        }
+        findComponent("charIsPixel").onClick = ()->{
+            findComponent("charIsPixel").selectedIndex++;
+            findComponent("charIsPixel").selectedIndex = findComponent("charIsPixel").selectedIndex % 2;
+        }
+
+        findComponent("charAnimationList").onChange = ()->{
+            editingCharacter.playAnimation(findComponent("charAnimationList").selectedItem.id, true);
+            if (FlxG.mouse.justReleased) bypassInput = true;
+        }
+
+        findComponent("charAnimationList").dataSource.clear();
+        findComponent("charAnimationList").dataSource.allowCallbacks = true;
+        trace("I hate my fat chud life");
+
+        for (i in onionSkins.keys()) {
+            onionSkins.get(i).destroy();
+        }
+        onionSkins.clear();
+
+        for (i in editingCharacter._data.animations) {
+            var onion = CharacterDataParser.fetchCharacter(editingCharacter.characterId);
+            onion?.debug = true;
+            onion.alpha = 0.5;
+            onion.visible = false;
+            onion.x = editingCharacter.x;
+            onion.y = editingCharacter.y;
+            onion.flipX = false;
+            onion.camera = camGame;
+            onion.playAnimation(i.name, true);
+            onionSkins.set(i.name, onion);
+            insert(members.indexOf(editingCharacter)-1, onion);
+            // GenzuUI.findComponent("charAnimationList").dataSource.add( { text: i.name + " (" + i.offsets[0] + ", " + i.offsets[1] + ")", id: i.name });
+        }
+
+        refreshAnimationList();
+
+        for (button in findComponent("charAnimationList").findComponents(null, Button)) {
+            button?.selected = false;
+            button.color = FlxColor.WHITE;
+        }
+
+        findComponent("editHealthIcon").onClick = openIconDialog;
+
+        editingCharacterPlayAnim(editingCharacter._data.startingAnimation ?? "idle");
+    }
+
+    public function reloadCharacter() {
+        remove(editingCharacter);
+        var newCharacter = getBlankRenderCharacter(editingCharacter._data.renderType);
+        newCharacter._data = Json.parse(Serialize.process(editingCharacter._data));
+        newCharacter.characterId = editingCharacter.characterId;
+        newCharacter.debug = true;
+        editingCharacter = newCharacter;
+        editingCharacter.cameras = [camGame];
+
+        try {
+            editingCharacter.onCreate();
+            add(editingCharacter);
+        } catch (e:Dynamic) {
+            trace("Prolly couldn't find texture...");
+        }
+        for (i in onionSkins.keys()) {
+            var newOnion = getBlankRenderCharacter(editingCharacter._data.renderType);
+            newOnion._data = editingCharacter._data;
+            newOnion.characterId = editingCharacter.characterId;
+            newOnion.debug = true;
+            var onion = onionSkins.get(i);
+            remove(onion);
+            onion = newOnion;
+            onion.cameras = [camGame];
+            try { onion.onCreate(); } catch (e:Dynamic) {}
+            onion.alpha = 0.5;
+            onion.visible = false;
+            onion.playAnimation(i, true);
+            insert(members.indexOf(editingCharacter)-1, onion);
+            onionSkins.set(i, onion);
+        }
+        updateCharacter();
+    }
+
+    public function getBlankRenderCharacter(type:String) {
+        return switch (type) {
+            case "sparrow":
+                new SparrowCharacter('pico');
+            case "multisparrow":
+                new MultiSparrowCharacter('pico-playable');
+            case "animateatlas":
+                new AnimateAtlasCharacter('gf');
+            case "multianimateatlas":
+                new MultiAnimateAtlasCharacter('bf');
+        }
+    }
+
+    public function resetCameraZoom() {
+        var ease = FlxEase.quadOut;
+        FlxTween.tween(camGame.scroll, {x: 0, y: 0}, 0.3, {ease: ease});
+        FlxTween.tween(camGame, {zoom: 1}, 0.3, {ease: ease});
+        FlxTween.num(targetZoom, 1, 0.3, {ease: ease}, (n)->{
+            targetZoom = n;
+        });
+    }
+    
+    public function refreshAnimationList() {
+        findComponent("charAnimationList").dataSource.clear();
+        for (i in editingCharacter._data.animations) {
+            findComponent("charAnimationList").dataSource.add( { text: i.name + " (" + ((Math.round(getAnimationData(i.name).offsets[0]*100)/100) * -1) + ", " + ((Math.round(getAnimationData(i.name).offsets[1]*100)/100) * -1) + ")", id: i.name });
+        }
+    }
+
+    var mouseLock = {
+        x: 0,
+        y: 0
+    }
+
+    public var enableInput = true;
+
+    public var targetZoom = 1;
+
+    public function updateCharacter() {
+        if (editingCharacter != null) {
+            editingCharacter.screenCenter();
+            editingCharacter.x -= FlxG.width / 6;
+            editingCharacter.flipX = false;
+
+            for (i in onionSkins.keys()) {
+                var onion = onionSkins.get(i);
+                onion.x = editingCharacter.x;
+                onion.y = editingCharacter.y;
+                onion.flipX = false;
+            }
+        }
+    }
+
+    var prev = [];
+
+    public function update(event) {
+        super.update(event);
+        // return;
+        // GenzuUI.checkForDebug();
+
+        updateCharacter();
+        validateNow();
+
+        for (i in Reflect.fields(FlxG.keys.justPressed)) {
+            if (Reflect.getProperty(FlxG.keys.justPressed, i) && i != "status" && i != "keyManager" && i != "NONE") {
+                FunkinSound.playOnce(Paths.sound("chartingSounds/keyboard" + FlxG.random.int(1, 3)))?.volume = 0.8;
+            }
+        }
+
+        
+        if (FlxG.mouse.justPressed) FunkinSound.playOnce(Paths.sound("chartingSounds/ClickDown"));
+        
+        if (FlxG.mouse.justReleased) FunkinSound.playOnce(Paths.sound("chartingSounds/ClickUp"));
+
+        if (KeybindHandlerCHARACTER.CANCEL_INPUT) return;
+
+        editingOffsetsText.visible = !isCursorOverHaxeUI && FlxG.keys.pressed.CONTROL;
+        editingOffsetsText.alpha = FlxG.mouse.pressed ? 1 : 0.5;
+        
+        // for (i in 0...(GenzuUI.findComponent("charAnimationList").dataSource.size ?? 0)) {
+        var index = 0;
+        var actualIndex = 0;
+        for (button in findComponent("charAnimationList").findComponents(null, Button)) {
+            actualIndex++;
+            var animation = findComponent("charAnimationList").dataSource.get(index);
+            if (animation == null) continue;
+            var animationID = animation.id;
+            
+            if (button.id == "onion") {
+                if (button.onClick == null) {
+                    button.onClick = ()->{
+                        button.color = !button.selected ? FlxColor.WHITE : FlxColor.CYAN;
+                        onionSkins.get(animationID)?.visible = button.selected;
+                    }
+                }
+            } else if (button.id == "edit") {
+                button.color = FlxColor.YELLOW;
+                button.onClick = ()->openEditAnimationDialog(animationID);
+            } else if (button.id == "delete") {
+                button.color = FlxColor.RED;
+                button.onClick = ()->deleteAnimation(animationID);
+            }
+            if (actualIndex % 3 == 0) index++;
+        }
+
+        if (FlxG.mouse.justPressed) {
+            enableInput = !isSomethingFocused;
+        }
+
+        if (FlxG.mouse.justPressed && isCursorOverHaxeUI) {
+            bypassInput = false;
+        }
+
+        if ((!isSomethingFocused || bypassInput) && editingCharacter != null) {
+            if (FlxG.keys.justPressed.W && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim("singUP");
+            } else if (FlxG.keys.justPressed.A && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim("singLEFT");
+            } else if (FlxG.keys.justPressed.S && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim("singDOWN");
+            } else if (FlxG.keys.justPressed.D && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim("singRIGHT");
+            } else if (FlxG.keys.justPressed.Q && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim(hasAnimation("danceLeft") ? "danceLeft" : editingCharacter._data.startingAnimation ?? "idle");
+            } else if (FlxG.keys.justPressed.E && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim(hasAnimation("danceRight") ? "danceRight" : editingCharacter._data.startingAnimation ?? "idle");
+            } else if (FlxG.keys.justPressed.SPACE && !FlxG.keys.pressed.SHIFT && !FlxG.keys.pressed.CONTROL) {
+                editingCharacterPlayAnim(editingCharacter.animation.name);
+            }
+
+            for (i in editingCharacter._data.animations) {
+                getAnimationData(i.name).offsets = getAnimationData(i.name).offsets != null ? getAnimationData(i.name).offsets : [ 0, 0 ];
+            }
+
+            var offsetAmt = FlxG.keys.pressed.SHIFT ? 25 : (FlxG.keys.pressed.CONTROL ? 1 : 10);
+            if (FlxG.keys.justPressed.LEFT) {
+                offsetAnimation(0, -offsetAmt);
+            } else if (FlxG.keys.justPressed.RIGHT) {
+                offsetAnimation(0, offsetAmt);
+            } else if (FlxG.keys.justPressed.UP) {
+                offsetAnimation(1, -offsetAmt);
+            } else if (FlxG.keys.justPressed.DOWN) {
+                offsetAnimation(1, offsetAmt);
+            }
+
+            if (editingCharacter._data != null) {
+                if (FlxG.keys.pressed.CONTROL && FlxG.keys.justPressed.C) {
+                    copyOffsets();
+                } else if (FlxG.keys.pressed.CONTROL && FlxG.keys.justPressed.V) {
+                    pasteOffsets();
+                }
+            }
+        }
+
+
+        if (enableInput || bypassInput) {
+            if (FlxG.mouse.pressed && !FlxG.mouse.justPressed && !FlxG.keys.pressed.CONTROL) {
+                if (editingCharacter != null) {
+                    camGame.scroll.x -= FlxG.mouse.deltaX / camGame.zoom;
+                    camGame.scroll.y -= FlxG.mouse.deltaY / camGame.zoom;
+                }
+            }
+
+            if (FlxG.mouse.pressed && !FlxG.mouse.justPressed && FlxG.keys.pressed.CONTROL) {
+                offsetAnimation(0, FlxG.mouse.deltaX / camGame.zoom);
+                offsetAnimation(1, FlxG.mouse.deltaY / camGame.zoom);
+            }
+
+            if (FlxG.mouse.wheel != 0 && !isCursorOverHaxeUI) {
+                targetZoom += (FlxG.mouse.wheel / 5) * targetZoom;
+                if (targetZoom < 0.1) {
+                    targetZoom = 0.1;
+                }
+            }
+        }
+
+        camGame.zoom = MathUtil.coolLerp(camGame.zoom, targetZoom, 0.1);
+
+        // trace("Is User Typing: " + new FocusManager().focus);
+    }
+
+    public function copyOffsets() {
+        if (isSomethingFocused) return;
+        clipboard = getSelectedAnimation().offsets;
+    }
+
+    public function pasteOffsets() {
+        if (isSomethingFocused) return;
+        setOffsetAnimation(0, clipboard[0]);
+        setOffsetAnimation(1, clipboard[1]);
+    }
+
+    public function deleteAnimation(id:String) {
+        onionSkins.clear();
+        editingCharacter._data.animations.remove(getAnimationData(id));
+        refreshAnimationList();
+        reloadCharacter();
+
+        var playNow = "";
+        for (i in editingCharacter._data.animations) playNow = i.name;
+        editingCharacterPlayAnim(playNow);
+    }
+
+    public function clearAllAnimationOffsets() {
+        for (i in editingCharacter._data.animations) {
+            setAnimationOffsets(i.name, [ 0, 0 ]);
+        }
+        editingCharacterPlayAnim(editingCharacter.animation.name);
+        editingCharacter.animation.finish();
+    }
+    
+    public function newAnimation() {
+        var anim = getBlankAnimation();
+        editingCharacter._data.animations.push(anim);
+        refreshAnimationList();
+        reloadCharacter();
+        editingCharacterPlayAnim(anim.name);
+    }
+
+    public function duplicateAnimation() {
+        var animToCopy = getAnimationData(editingCharacter.animation.name);
+        var anim = getBlankAnimation();
+        anim.name = animToCopy.name + " [COPY]";
+        anim.assetPath = animToCopy.assetPath;
+        anim.offsets = animToCopy.offsets;
+        anim.prefix = animToCopy.prefix;
+        anim.looped = animToCopy.looped;
+        anim.flipX = animToCopy.flipX;
+        anim.flipY = animToCopy.flipY;
+        editingCharacter._data.animations.push(anim);
+        refreshAnimationList();
+        reloadCharacter();
+        editingCharacterPlayAnim(anim.name);
+    }
+
+    public function getBlankAnimation() {
+        var index = 0;
+        for (i in editingCharacter._data.animations) if (i.name.startsWith("New Animation")) index++;
+        return {
+            name: "New Animation" + (index != 0 ? " [" + index + "]" : ""),
+            assetPath: null,
+            offsets: [ 0, 0 ],
+            prefix: "",
+            frameIndices: [],
+            looped: false,
+            flipX: false,
+            flipY: false,
+            frameRate: 24
+        }
+    }
+
+    public function offsetAnimation(index:Int, amount:Float) {
+        getSelectedAnimation().offsets[index] -= amount;
+        editingCharacter.animationOffsets.get(editingCharacter.animation.name)[index] -= amount;
+        refreshAnimationList();
+        for (i in onionSkins.keys()) {
+            if (i != editingCharacter.animation.name) continue;
+            var onion = onionSkins.get(i);
+            onion.animationOffsets.get(i)[index] -= amount;
+            onion.playAnimation(i, true);
+            onion.animation.finish();
+        }
+        // reloadCharacter();
+        editingCharacter.playAnimation(editingCharacter.animation.name, true);
+        editingCharacter.animation.finish();
+    }
+
+    public function setOffsetAnimation(index:Int, pos) {
+        getSelectedAnimation().offsets[index] = pos;
+        editingCharacter.animationOffsets.get(editingCharacter.animation.name)[index] = pos;
+        refreshAnimationList();
+        for (i in onionSkins.keys()) {
+            if (i != editingCharacter.animation.name) continue;
+            var onion = onionSkins.get(i);
+            onion.animationOffsets.get(i)[index] = pos;
+            onion.playAnimation(i, true);
+            onion.animation.finish();
+        }
+        // reloadCharacter();
+        editingCharacter.playAnimation(editingCharacter.animation.name, true);
+        editingCharacter.animation.finish();
+    }
+
+    public function setAnimationOffsets(id:String, offsets:Array<Int>) {
+        getAnimationData(id).offsets = offsets;
+        editingCharacter.animationOffsets.set(id, offsets);
+        refreshAnimationList();
+        for (i in onionSkins.keys()) {
+            if (i != id) continue;
+            var onion = onionSkins.get(i);
+            onion.animationOffsets.set(i, offsets);
+            onion.playAnimation(i, true);
+            onion.animation.finish();
+        }
+        // reloadCharacter();
+        // editingCharacter.playAnimation(id, true);
+        // editingCharacter.animation.finish();
+    }
+
+    public function getSelectedAnimation() {
+        for (i in editingCharacter._data.animations) if (i.name == editingCharacter.animation.name) return i;
+    }
+    public function getAnimationData(name:String) {
+        for (i in editingCharacter._data.animations) if (i.name == name) return i;
+    }
+
+    public function editingCharacterPlayAnim(id:String) {
+        for (i in 0...(findComponent("charAnimationList").dataSource.size ?? 0)) {
+            var item = findComponent("charAnimationList").dataSource.get(i);
+            if (item.id == id) 
+                findComponent("charAnimationList").selectedItems = [item];
+        }
+    }
+
+    public function hasAnimation(id:String) {
+        for (i in editingCharacter._data.animations) 
+            if (i.name == id) return true;
+        return false;
+    }
+
+    public function getRenderType() {
+        var type = findComponent("charRenderTypeStepper").selectedItem.id;
+        for (i in editingCharacter._data.animations) {
+            if (i.assetPath != "" && i.assetPath != null) {
+                type = "multi" + type;
+                break;
+            }
+        }
+        return type;
+    }
+
+    public function openUserGuideWindow() {
+        WindowManager.instance = new WindowManager();
+        KeybindHandlerCHARACTER.CANCEL_INPUT = true;
+        MENU_BAR.disabled = true;
+        CHARACTER_WINDOW.disabled = true;
+        
+        USER_GUIDE_WINDOW = RuntimeComponentBuilder.build(Paths.ui("character-editor/userGuide"));
+        USER_GUIDE_WINDOW.screenCenter();
+        WindowManager.instance.addWindow(USER_GUIDE_WINDOW);
+        
+        USER_GUIDE_WINDOW.findComponent("windowCloseButton").onClick = ()->{
+            MENU_BAR.disabled = false;
+            CHARACTER_WINDOW.disabled = false;
+            KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+            FunkinSound.playOnce(Paths.sound("chartingSounds/exitWindow"));
+        };
+
+        for (i in ["joinNovaButton", "joinNetworkButton", "donateNova", "donateGenzu"]) {
+            USER_GUIDE_WINDOW.findComponent(i).onClick = ()->{
+                FlxG.openURL(USER_GUIDE_WINDOW.findComponent(i).tooltip);
+            }
+        }
+
+        FunkinSound.playOnce(Paths.sound("chartingSounds/openWindow"));
+    }
+
+    public function capitalize(string:String) {
+        var finalString = string.split("");
+        finalString[0] = finalString[0].toUpperCase();
+        return finalString.join("");
+    }
+
+    var iconDialog = null;
+    public function openIconDialog() {
+        if (iconDialog != null) return;
+        FunkinSound.playOnce(Paths.sound("chartingSounds/openWindow"));
+        remove(CHARACTER_WINDOW);
+        addWindow(CHARACTER_WINDOW);
+        remove(MENU_BAR);
+        add(MENU_BAR);
+
+        var dialog = RuntimeComponentBuilder.build(Paths.ui("character-editor/dialogs/iconData"));
+        iconDialog = dialog;
+        // dialog.cameras = [camDialog];
+        dialog.showDialog(true);
+        dialog._overlay.onClick = ()->{};
+        KeybindHandlerCHARACTER.CANCEL_INPUT = true;
+
+        var icon = new HealthIcon('bf');
+        icon.camera = camDialog;
+        dialog.dialogCloseButton.onClick = ()->{
+            dialog.hideDialog();
+            remove(icon);
+            KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+            iconDialog = null;
+            FunkinSound.playOnce(Paths.sound("chartingSounds/exitWindow"));
+        }   
+
+        var repoIcon = ()->{
+            icon.updateHitbox();
+            icon.screenCenter();
+            icon.x -= 60;
+            icon.y += 25;
+        }
+
+        var iconPlayAnimation = (id:String) -> {
+            icon.playAnimation(id);
+            repoIcon();
+        }
+
+        var reloadIcon = ()->{
+
+            dialog.findComponent("iconAnimationList").dataSource.clear();
+
+            icon.configure(editingCharacter._data?.healthIcon);
+            icon.playAnimation("idle");
+            repoIcon();
+            
+            for (index in 0...icon.animation.getAnimationList().length) {
+                var i = icon.animation.getAnimationList()[(icon.animation.getAnimationList().length-1) - index];
+                dialog.findComponent("iconAnimationList").dataSource.add({ text: capitalize(i.name), id: i.name });
+            }
+            
+            if (dialog.findComponent("iconAnimationList").selectedItem != null && dialog.findComponent("iconAnimationList").selectedItem.id != null)
+                iconPlayAnimation(dialog.findComponent("iconAnimationList").selectedItem.id);
+        }
+        
+        dialog.findComponent("iconAnimationList").onChange = ()->{
+            iconPlayAnimation(dialog.findComponent("iconAnimationList").selectedItem.id);
+        }
+
+        dialog.findComponent("iconID").text = editingCharacter?._data?.healthIcon?.id;
+        dialog.findComponent("iconID").onChange = ()->{
+            editingCharacter?._data?.healthIcon?.id = dialog.findComponent("iconID").text;
+            reloadIcon();
+        }
+
+        dialog.findComponent("iconOffsetX").pos = -editingCharacter?._data?.healthIcon?.offsets[0];
+        dialog.findComponent("iconOffsetX").onChange = ()->{
+            editingCharacter?._data?.healthIcon?.offsets[0] = -dialog.findComponent("iconOffsetX").pos;
+            reloadIcon();
+        }
+
+        dialog.findComponent("iconOffsetY").pos = -editingCharacter?._data?.healthIcon?.offsets[1];
+        dialog.findComponent("iconOffsetY").onChange = ()->{
+            editingCharacter?._data?.healthIcon?.offsets[1] = -dialog.findComponent("iconOffsetY").pos;
+            reloadIcon();
+        }
+
+        dialog.findComponent("iconScaleStepper").pos = editingCharacter?._data?.healthIcon?.scale;
+        dialog.findComponent("iconScaleStepper").onChange = ()->{
+            editingCharacter?._data?.healthIcon?.scale = dialog.findComponent("iconScaleStepper").pos;
+            reloadIcon();
+        }
+
+        dialog.findComponent("iconFlipX").selectedIndex = [true, false].indexOf(editingCharacter._data?.healthIcon?.flipX);
+        dialog.findComponent("iconFlipX").onChange = ()->{
+            editingCharacter._data?.healthIcon?.flipX = dialog.findComponent("iconFlipX").selectedItem.id == "true";
+            reloadIcon();
+        }
+        dialog.findComponent("iconFlipX").onClick = ()->{
+            dialog.findComponent("iconFlipX").selectedIndex++;
+            dialog.findComponent("iconFlipX").selectedIndex = dialog.findComponent("iconFlipX").selectedIndex % 2;
+        }
+
+        dialog.findComponent("iconIsPixel").selectedIndex = [true, false].indexOf(editingCharacter._data?.healthIcon?.isPixel);
+        dialog.findComponent("iconIsPixel").onChange = ()->{
+            editingCharacter._data?.healthIcon?.isPixel = dialog.findComponent("iconIsPixel").selectedItem.id == "true";
+            reloadIcon();
+        }
+        dialog.findComponent("iconIsPixel").onClick = ()->{
+            dialog.findComponent("iconIsPixel").selectedIndex++;
+            dialog.findComponent("iconIsPixel").selectedIndex = dialog.findComponent("iconIsPixel").selectedIndex % 2;
+        }
+        // icon.playAnimation("idle");
+        add(icon);
+        reloadIcon();
+        dialog.findComponent("iconAnimationList").selectedIndex = 0;
+
+    }
+
+    var animationDialog = null;
+    public function openEditAnimationDialog(id:String) {
+        if (animationDialog != null) return;
+        FunkinSound.playOnce(Paths.sound("chartingSounds/openWindow"));
+        var animationData = getAnimationData(id);
+
+        remove(CHARACTER_WINDOW);
+        addWindow(CHARACTER_WINDOW);
+        remove(MENU_BAR);
+        add(MENU_BAR);
+
+        var dialog = RuntimeComponentBuilder.build(Paths.ui("character-editor/dialogs/animationData"));
+        animationDialog = dialog;
+        dialog.showDialog(true);
+        dialog._overlay.onClick = ()->{};
+        dialog.dialogCloseButton.onClick = ()->{
+            FunkinSound.playOnce(Paths.sound("chartingSounds/exitWindow"));
+            dialog.hideDialog();
+            KeybindHandlerCHARACTER.CANCEL_INPUT = false;
+            animationDialog = null;
+            reloadCharacter();
+            populateCharacterData();
+            refreshAnimationList();
+        }
+        KeybindHandlerCHARACTER.CANCEL_INPUT = true;
+
+        dialog.findComponent("animName").text = animationData.name;
+        dialog.findComponent("animName").onChange = ()->{
+            animationData.name = dialog.findComponent("animName").text;
+        }
+
+        dialog.findComponent("animPrefix").text = animationData.prefix;
+        dialog.findComponent("animPrefix").onChange = ()->{
+            animationData.prefix = dialog.findComponent("animPrefix").text;
+        }
+        
+        dialog.findComponent("assetPath").text = animationData.assetPath;
+        dialog.findComponent("assetPath").onChange = ()->{
+            animationData.assetPath = dialog.findComponent("assetPath").text;
+        }
+
+        dialog.findComponent("animIndices").text = AnimUtils.indiciesToString(animationData.frameIndices);
+        dialog.findComponent("animIndices").onChange = ()->{
+            animationData.frameIndices = AnimUtils.stringToIndices(dialog.findComponent("animIndices").text);
+        }
+
+        dialog.findComponent("animOffsetX").pos = -animationData.offsets[0];
+        dialog.findComponent("animOffsetX").onChange = ()->{
+            animationData.offsets[0] = -dialog.findComponent("animOffsetX").pos;
+        }
+        
+        dialog.findComponent("animOffsetY").pos = -animationData.offsets[1];
+        dialog.findComponent("animOffsetY").onChange = ()->{
+            animationData.offsets[1] = -dialog.findComponent("animOffsetY").pos;
+        }
+        
+        dialog.findComponent("animFrameRate").pos = animationData.frameRate;
+        dialog.findComponent("animFrameRate").onChange = ()->{
+            animationData.frameRate = dialog.findComponent("animFrameRate").pos;
+        }
+
+        dialog.findComponent("animFlipX").selectedIndex = [true, false].indexOf(animationData.flipX);
+        dialog.findComponent("animFlipX").onChange = ()->{
+            animationData.flipX = dialog.findComponent("animFlipX").selectedItem.id == "true";
+        }
+
+        dialog.findComponent("animIsPixel").selectedIndex = [true, false].indexOf(animationData?.isPixel ?? false);
+        dialog.findComponent("animIsPixel").onChange = ()->{
+            animationData.isPixel = dialog.findComponent("animIsPixel").selectedItem.id == "true";
+        }
+
+        dialog.findComponent("animLooped").selectedIndex = [true, false].indexOf(animationData.looped);
+        dialog.findComponent("animLooped").onChange = ()->{
+            animationData.looped = dialog.findComponent("animLooped").selectedItem.id == "true";
+        }
+
+    }
+
+
+    public function validateNow() {
+        root.validateNow();
+    }
+
+    private function registerBehaviours() {
+
+    }
+
+    public function addComponent(child:Component):Component  {
+        return root.addComponent(child);
+    }
+
+    public var width(get, set):Float;
+    private function get_width():Float {
+        return root.width;
+    }
+    private function set_width(value:Float):Float {
+        root.width = value;
+        return value;
+    }
+
+    public var percentWidth(get, set):Float;
+    private function get_percentWidth():Float {
+        return root.percentWidth;
+    }
+    private function set_percentWidth(value:Float):Float {
+        root.percentWidth = value;
+        return value;
+    }
+
+    public var height(get, set):Float;
+    private function get_height():Float {
+        return root.height ;
+    }
+    private function set_height(value:Float):Float {
+        root.height  = value;
+        return value;
+    }
+
+    public var percentHeight(get, set):Float;
+    private function get_percentHeight():Float {
+        return root.percentHeight ;
+    }
+    private function set_percentHeight(value:Float):Float {
+        root.percentHeight  = value;
+        return value;
+    }
+
+    public var styleString(get, set):String;
+    private function get_styleString():String {
+        return root.styleString ;
+    }
+    private function set_styleString(value:String):String {
+        root.styleString  = value;
+        return value;
+    }
+
+    public function show() {
+        root.show();
+    }
+
+    public function hide() {
+        root.hide();
+    }
+
+    public function destroy(event) {
+        super.destroy(event);
+        // GenzuUI.changeTheme('dark');
+    }
+}

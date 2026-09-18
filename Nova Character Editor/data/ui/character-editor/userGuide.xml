@@ -1,0 +1,246 @@
+<window title="User Guide" width="500" height="600" maximizable="false" minimizable="false"
+    collapsable="false" closable="true" draggable="false">
+    <style>
+        .discord-card {
+            background: #313234;
+            border-radius: 10px;
+        }
+
+        .discord-button {
+            background: #00863a;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-name:'fonts/gintoRegular.ttf';
+        }
+
+        .discord-button:hover {
+            background: #057834
+        }
+
+        .discord-button:down {
+            background: #02662c
+        }
+
+        .kofi-card {
+            background: #313234;
+            border-radius: 10px;
+        }
+
+        .kofi-button {
+            background: #72a4f2;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-name:'fonts/gintoRegular.ttf';
+        }
+
+        .kofi-button:hover {
+            background: #507ec7
+        }
+
+        .kofi-button:down {
+            background: #335d9e
+        }
+    </style>
+
+    <tabview id="tv2" width="100%" height="100%">
+        <box text="Guide">
+            <vbox width="100%">
+                <label
+                    text="Welcome to the User Guide for the Nova Character Editor! In the \nUser Guide you'll be able to learn basic use and functionality \nof the Character Editor. Not only that but you'll also find \nuseful tips and tricks you can use while creating/editing \ncharacters."
+                    style="padding: 2px;" verticalAlign="center" />
+                <spacer height="10" />
+                <label text="To get started, click on one of the taps at the top of window!"
+                    style="padding: 2px;" verticalAlign="center" />
+                <spacer height="335" />
+                <label text="- GENZU" style="padding: 2px;" verticalAlign="center" />
+            </vbox>
+        </box>
+
+        <box text="Keybinds">
+            <tableview width="450" height="485" contentWidth="100%">
+                <header width="100%">
+                    <column id="action" text="Action" width="50%" />
+                    <column id="keybind" text="Keybind" width="50%" />
+                </header>
+                <data>
+                    <item action="Show User Guide" keybind="F1" />
+                    <item action="New Character" keybind="Ctrl + N" />
+                    <item action="Save Character" keybind="Ctrl + S" />
+                    <item action="Exit To Menu" keybind="Ctrl + Q" />
+                    <rule/>
+                    <item action="Move Camera" keybind="Click and Drag" />
+                    <item action="Move Animation Offsets" keybind="Ctrl + Click and Drag" />
+                    <item action="Move Animation Offsets" keybind="Arrow Keys" />
+                    <item action="Zoom Camera" keybind="Scroll Wheel" />
+                    <item action="Reset Zoom" keybind="Ctrl+R" />
+                    <rule/>
+                    <item action="Copy Offsets" keybind="Ctrl+C" />
+                    <item action="Paste Offsets" keybind="Ctrl+P" />
+                    <item action="New Animation" keybind="Ctrl+Shift+N" />
+                    <item action="Delete Animation" keybind="Ctrl+Del" />
+                    <item action="Duplicate Animation" keybind="Ctrl+D" />
+                    <item action="Clear All Animation Offsets" keybind="Ctrl+Shift+D" />
+                    <rule/>
+                    <item action="Play Sing Animation" keybind="W, A, S, D" />
+                    <item action="Play Idle Animation" keybind="Q/E" />
+                    <item action="Play Dance Left Animation" keybind="Q" />
+                    <item action="Play Dance Right Animation" keybind="E" />
+
+                </data>
+            </tableview>
+        </box>
+
+        <box text="Credits">
+            <tableview width="450" height="485" contentWidth="100%">
+                <header width="100%">
+                    <column id="name" text="Name" width="50%" />
+                    <column id="role" text="Role" width="50%" />
+                </header>
+                <data>
+                    <item name="Nebula S. Nova" role="Main Coder" />
+                    <item name="GENZU" role="Coded The UI" />
+                    <rule/>
+                    <item name="Special Thanks:" />
+                    <item name="ADA_Funni" role="Helped Bug Fix" />
+                </data>
+            </tableview>
+        </box>
+
+        <box text="Change Log">
+            <scroll-view width="449" height="485" contentWidth="100%">
+                <vbox>
+                    <frame text="v4.0.0" width="425">
+                        <vbox>
+                            <label text="Complete Re-Code of the editor for v0.8.X of V-Slice." />
+                        </vbox>
+                    </frame>
+                    <frame text="v3.0.1" width="425">
+                        <vbox>
+                            <label text="—— Additions ——" />
+                            <spacer />
+                            <label text="• Added Frame Rate option in animations." />
+                            <spacer />
+                            <label text="—— Fixes ——" />
+                            <spacer />
+                            <label text="• Fixed Texture Atlas not working." />
+                            <spacer />
+                        </vbox>
+                    </frame>
+                    <frame text="v3.0.0" width="425">
+                        <vbox>
+                            <label text="—— Additions ——" />
+                            <spacer />
+                            <label text="• The editor lol." />
+                            <spacer />
+                        </vbox>
+                    </frame>
+                </vbox>
+            </scroll-view>
+        </box>
+
+        <!-- <box text="To-Do">
+            <vbox>
+                <label text="—— To Be Added ——" />
+                <spacer />
+                <label text="• Character Converters." />
+                <label text="• Song Choice Saving." />
+                <label text="• In-Game Updater (Again)." />
+            </vbox>
+        </box> -->
+
+        <box text="Discord">
+            <vbox>
+                <!-- tooltip="For more help with the editor join this server." -->
+                <!--  <label text="Nova Editor Server:"/>
+                <label text="https://discord.gg/MTMRYc63Dj"/> -->
+                <card width="450" styleName="discord-card">
+                    <vbox>
+                        <label text="Nova Utils Server"
+                            style="font-name:'fonts/gintoMedium.ttf';color: white;" />
+                        <box height="2" />
+                        <label text="For more help with the editor"
+                            style="font-name:'fonts/gintoRegular.ttf'" />
+                        <label text="join this server!" style="font-name:'fonts/gintoRegular.ttf'" />
+                        <box height="2" />
+                        <button id="joinNovaButton" styleName="discord-button" width="420"
+                            text="Join" tooltip="https://discord.gg/MTMRYc63Dj"
+                            style="font-name:'fonts/gintoRegular.ttf'" />
+                    </vbox>
+                </card>
+                <spacer height="3" />
+                <card width="450" styleName="discord-card">
+                    <vbox>
+                        <label text="V-Slice Network"
+                            style="font-name:'fonts/gintoMedium.ttf';color: white;" />
+                        <box height="2" />
+                        <label text="For help related to V-Slice Modding"
+                            style="font-name:'fonts/gintoRegular.ttf'" />
+                        <label text="join this server!" style="font-name:'fonts/gintoRegular.ttf'" />
+                        <box height="2" />
+                        <button id="joinNetworkButton" styleName="discord-button" width="420"
+                            text="Join" tooltip="https://discord.gg/ca2Kb6kukm"
+                            style="font-name:'fonts/gintoRegular.ttf'" />
+                    </vbox>
+                </card>
+
+            </vbox>
+        </box>
+
+        <box text="FAQ">
+            <scroll-view width="449" height="485" contentWidth="100%">
+                <vbox>
+                    <frame text=" - General Troubleshooting - " width="435">
+                        <vbox>
+                            <label text=" • Make sure your mod has a valid '_polymod_meta.json'." />
+                            <label text=" • Make sure your characters textureatlases/spritesheets \n   are in 'mods/YOUR MOD/shared/images/characters/'." />
+                            <label text=" • For the asset path, if your asset is in \n   'mods/YOUR MOD/shared/images/characters/image.png' you \n   only have to type 'image'" />
+                        </vbox>
+                    </frame>
+                    <!-- <frame text=" - Onion Skin - " width="435">
+                        <vbox>
+                            <label text=" • To change the onion skin, press on one of the dots next \n   to the animation name." />
+                        </vbox>
+                    </frame> -->
+<!--                     <frame text=" - Asset Path is Invalid - " width="435">
+                        <vbox>
+                            <label text=" • Images must be placed in either the 'images/' folder \n   or the 'shared/images/' folder." />
+                            <spacer />
+                            <label text=" • When typing the Asset Path make sure you are using \n   foward slashes: Use '/' NOT '\'." />
+                            <spacer />
+                            <label text=" • When typing the Asset Path you do NOT need to include \n   'images/' or 'shared/images/' as the editor does that \n   automatically." />
+                            <spacer />
+                        </vbox>
+                    </frame> -->
+                </vbox>
+            </scroll-view>
+        </box>
+        <vbox text="Donate">
+            <card width="450" styleName="kofi-card">
+                <vbox>
+                    <label text="Nebula S. Nova" style="font-name:'fonts/gintoMedium.ttf';color: white;" />
+                    <box height="2" />
+                    <label text="Coded the functionality of the editor." style="font-name:'fonts/gintoRegular.ttf'" />
+                    <label text="I do commissions!" style="font-name:'fonts/gintoRegular.ttf'" />
+                    <box height="2" />
+                    <button id="donateNova" styleName="kofi-button" width="420" text="Support me on Ko-fi" tooltip="https://ko-fi.com/nebulastellanova" style="font-name:'fonts/gintoRegular.ttf'" />
+                </vbox>
+            </card>
+            <spacer height="3" />
+            <card width="450" styleName="kofi-card">
+                <vbox>
+                    <label text="GENZU" style="font-name:'fonts/gintoMedium.ttf';color: white;" />
+                    <box height="2" />
+                    <label text="Coded the majority of the UI XMLs." style="font-name:'fonts/gintoRegular.ttf'" />
+                    <box height="2" />
+                    <button id="donateGenzu" styleName="kofi-button" width="420" text="Support me on Ko-fi" tooltip="https://ko-fi.com/genzu25/commissions" style="font-name:'fonts/gintoRegular.ttf'" />
+                </vbox>
+            </card>
+        </vbox>
+    </tabview>
+    <!-- <window-footer width="100%">
+        <spacer width="100%" />
+        <button id="closeButton" text="Close" />
+    </window-footer> -->
+</window>
